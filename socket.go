@@ -78,10 +78,10 @@ func (p *TSocket) pushDeadline(read, write bool) {
 	var rt time.Time
 	var wt time.Time
 	if p.readTimeout > 0 {
-		rt = time.Now().Add(time.Duration(p.connTimeout))
+		rt = time.Now().Add(time.Duration(p.readTimeout))
 	}
 	if p.readTimeout > 0 {
-		wt = time.Now().Add(time.Duration(p.connTimeout))
+		wt = time.Now().Add(time.Duration(p.writeTimeout))
 	}
 	if read {
 		p.conn.SetReadDeadline(rt)
