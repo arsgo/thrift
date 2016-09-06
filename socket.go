@@ -25,9 +25,11 @@ import (
 )
 
 type TSocket struct {
-	conn    net.Conn
-	addr    net.Addr
-	timeout time.Duration
+	conn         net.Conn
+	addr         net.Addr
+	connTimeout  time.Duration
+	readTimeout  time.Duration
+	writeTimeout time.Duration
 }
 
 // NewTSocket creates a net.Conn-backed TTransport, given a host and port
@@ -51,31 +53,41 @@ func NewTSocketTimeout(hostPort string, timeout time.Duration) (*TSocket, error)
 
 // Creates a TSocket from a net.Addr
 func NewTSocketFromAddrTimeout(addr net.Addr, timeout time.Duration) *TSocket {
-	return &TSocket{addr: addr, timeout: timeout}
+	return &TSocket{addr: addr, connTimeout: timeout, readTimeout: timeout, writeTimeout: timeout}
 }
 
 // Creates a TSocket from an existing net.Conn
 func NewTSocketFromConnTimeout(conn net.Conn, timeout time.Duration) *TSocket {
-	return &TSocket{conn: conn, addr: conn.RemoteAddr(), timeout: timeout}
+	return &TSocket{conn: conn, addr: conn.RemoteAddr(), connTimeout: timeout, readTimeout: timeout, writeTimeout: timeout}
+}
+
+//NewTSocketFromConnTimeout2  Creates a TSocket from an existing net.Conn
+func NewTSocketFromConnTimeout2(conn net.Conn, connTimeout time.Duration, readTimeout time.Duration, writeTimeout time.Duration) *TSocket {
+	return &TSocket{conn: conn, addr: conn.RemoteAddr(), connTimeout: connTimeout, readTimeout: readTimeout, writeTimeout: writeTimeout}
 }
 
 // Sets the socket timeout
-func (p *TSocket) SetTimeout(timeout time.Duration) error {
-	p.timeout = timeout
+func (p *TSocket) SetTimeout(connTimeout time.Duration, readTimeout time.Duration, writeTimeout time.Duration) error {
+	p.connTimeout = connTimeout
+	p.readTimeout = readTimeout
+	p.writeTimeout = writeTimeout
 	return nil
 }
 
 func (p *TSocket) pushDeadline(read, write bool) {
-	var t time.Time
-	if p.timeout > 0 {
-		t = time.Now().Add(time.Duration(p.timeout))
+	var rt time.Time
+	var wt time.Time
+	if p.readTimeout > 0 {
+		rt = time.Now().Add(time.Duration(p.connTimeout))
 	}
-	if read && write {
-		p.conn.SetDeadline(t)
-	} else if read {
-		p.conn.SetReadDeadline(t)
-	} else if write {
-		p.conn.SetWriteDeadline(t)
+	if p.readTimeout > 0 {
+		wt = time.Now().Add(time.Duration(p.connTimeout))
+	}
+	if read {
+		p.conn.SetReadDeadline(rt)
+	}
+	if write {
+		p.conn.SetWriteDeadline(wt)
 	}
 }
 
@@ -94,7 +106,7 @@ func (p *TSocket) Open() error {
 		return NewTTransportException(NOT_OPEN, "Cannot open bad address.")
 	}
 	var err error
-	if p.conn, err = net.DialTimeout(p.addr.Network(), p.addr.String(), p.timeout); err != nil {
+	if p.conn, err = net.DialTimeout(p.addr.Network(), p.addr.String(), p.connTimeout); err != nil {
 		return NewTTransportException(NOT_OPEN, err.Error())
 	}
 	return nil
@@ -161,6 +173,5 @@ func (p *TSocket) Interrupt() error {
 
 func (p *TSocket) RemainingBytes() (num_bytes uint64) {
 	const maxSize = ^uint64(0)
-	return maxSize  // the thruth is, we just don't know unless framed is used
+	return maxSize // the thruth is, we just don't know unless framed is used
 }
-
