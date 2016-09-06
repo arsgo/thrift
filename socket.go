@@ -56,14 +56,14 @@ func NewTSocketFromAddrTimeout(addr net.Addr, timeout time.Duration) *TSocket {
 	return &TSocket{addr: addr, connTimeout: timeout, readTimeout: timeout, writeTimeout: timeout}
 }
 
+//NewTSocketFromAddrTimeout2  Creates a TSocket from an existing net.Conn
+func NewTSocketFromAddrTimeout2(addr net.Addr, connTimeout time.Duration, readTimeout time.Duration, writeTimeout time.Duration) *TSocket {
+	return &TSocket{addr: addr, connTimeout: connTimeout, readTimeout: readTimeout, writeTimeout: writeTimeout}
+}
+
 // Creates a TSocket from an existing net.Conn
 func NewTSocketFromConnTimeout(conn net.Conn, timeout time.Duration) *TSocket {
 	return &TSocket{conn: conn, addr: conn.RemoteAddr(), connTimeout: timeout, readTimeout: timeout, writeTimeout: timeout}
-}
-
-//NewTSocketFromConnTimeout2  Creates a TSocket from an existing net.Conn
-func NewTSocketFromConnTimeout2(conn net.Conn, connTimeout time.Duration, readTimeout time.Duration, writeTimeout time.Duration) *TSocket {
-	return &TSocket{conn: conn, addr: conn.RemoteAddr(), connTimeout: connTimeout, readTimeout: readTimeout, writeTimeout: writeTimeout}
 }
 
 // Sets the socket timeout
